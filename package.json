@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "install": "npm install --legacy-peer-deps",
+    "install": "npm install --legacy-peer-deps"
   },
   "dependencies": {
     "@google/model-viewer": "^4.1.0",
