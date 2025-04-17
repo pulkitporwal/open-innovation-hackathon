@@ -1,147 +1,291 @@
 "use client"
 
 import { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import TextSlidePreview from "@/components/slides/text-slide-preview"
-import ImageSlidePreview from "@/components/slides/image-slide-preview"
-import ModelSlidePreview from "@/components/slides/model-slide-preview"
+import { Card, CardContent } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import { AlertCircle, Plus } from "lucide-react"
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { themes, layouts } from "./slides/slide-themes"
+import ModelSlidePreview from "./slides/3d-model-preview"
 
-type Slide = {
+interface Slide {
   id: string
   type: "text" | "image" | "3d"
-  content: any
+  content: {
+    title?: string
+    body?: string
+    src?: string
+    alt?: string
+    caption?: string
+    theme?: string
+    layout?: string
+    modelUrl?: string
+  }
+  order: number
 }
 
 interface SlideEditorProps {
   slide: Slide
-  onUpdate: (updatedSlide: Slide) => void
+  onUpdate: (slide: Slide) => void
+  onAddSlide: (type: "text" | "image" | "3d") => void
 }
 
-export default function SlideEditor({ slide, onUpdate }: SlideEditorProps) {
-  const [activeTab, setActiveTab] = useState("preview")
-
-  const handleContentChange = (key: string, value: any) => {
-    const updatedSlide = {
+export default function SlideEditor({ slide, onUpdate, onAddSlide }: SlideEditorProps) {
+  const handleChange = (field: keyof Slide["content"], value: string) => {
+    onUpdate({
       ...slide,
       content: {
         ...slide.content,
-        [key]: value,
+        [field]: value,
       },
+    })
+  }
+
+  const renderSlideEditor = () => {
+    switch (slide.type) {
+      case "text":
+        return (
+          <Card className="w-full">
+            <CardContent className="p-6 space-y-4">
+              <Input
+                value={slide.content?.title || ""}
+                onChange={(e) => handleChange("title", e.target.value)}
+                placeholder="Slide Title"
+                className="text-2xl font-bold"
+              />
+              <Textarea
+                value={slide.content?.body || ""}
+                onChange={(e) => handleChange("body", e.target.value)}
+                placeholder="Slide Content"
+                className="min-h-[300px] text-lg"
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Theme</label>
+                  <Select
+                    value={slide.content?.theme || "Default"}
+                    onValueChange={(value) => handleChange("theme", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a theme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {themes.map((theme) => (
+                        <SelectItem key={theme.name} value={theme.name}>
+                          <div className="flex items-center gap-2">
+                            <div className={`h-4 w-4 rounded-full ${theme.colors.background.split(' ')[0]}`} />
+                            {theme.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Layout</label>
+                  <Select
+                    value={slide.content?.layout || "Centered"}
+                    onValueChange={(value) => handleChange("layout", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a layout" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {layouts.map((layout) => (
+                        <SelectItem key={layout.name} value={layout.name}>
+                          {layout.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )
+
+      case "image":
+        return (
+          <Card className="w-full">
+            <CardContent className="p-6 space-y-4">
+              <Input
+                value={slide.content?.src || ""}
+                onChange={(e) => handleChange("src", e.target.value)}
+                placeholder="Image URL"
+                className="text-lg"
+              />
+              <Input
+                value={slide.content?.alt || ""}
+                onChange={(e) => handleChange("alt", e.target.value)}
+                placeholder="Image Alt Text"
+                className="text-lg"
+              />
+              <Textarea
+                value={slide.content?.caption || ""}
+                onChange={(e) => handleChange("caption", e.target.value)}
+                placeholder="Image Caption"
+                className="text-lg"
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Theme</label>
+                  <Select
+                    value={slide.content?.theme || "Default"}
+                    onValueChange={(value) => handleChange("theme", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a theme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {themes.map((theme) => (
+                        <SelectItem key={theme.name} value={theme.name}>
+                          <div className="flex items-center gap-2">
+                            <div className={`h-4 w-4 rounded-full ${theme.colors.background.split(' ')[0]}`} />
+                            {theme.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Layout</label>
+                  <Select
+                    value={slide.content?.layout || "Centered"}
+                    onValueChange={(value) => handleChange("layout", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a layout" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {layouts.map((layout) => (
+                        <SelectItem key={layout.name} value={layout.name}>
+                          {layout.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {slide.content?.src ? (
+                <img
+                  src={slide.content.src}
+                  alt={slide.content.alt}
+                  className="w-full h-auto rounded-lg"
+                />
+              ) : (
+                <Alert variant="default" className="mt-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    No image URL provided. Please add an image URL to display the image.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        )
+
+      case "3d":
+        return (
+          <Card className="w-full">
+            <CardContent className="p-6 space-y-4">
+              <Input
+                value={slide.content?.modelUrl || ""}
+                onChange={(e) => handleChange("modelUrl", e.target.value)}
+                placeholder="3D Model URL (GLTF/GLB)"
+                className="text-lg"
+              />
+              <Textarea
+                value={slide.content?.caption || ""}
+                onChange={(e) => handleChange("caption", e.target.value)}
+                placeholder="Model Caption"
+                className="text-lg"
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Theme</label>
+                  <Select
+                    value={slide.content?.theme || "Default"}
+                    onValueChange={(value) => handleChange("theme", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a theme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {themes.map((theme) => (
+                        <SelectItem key={theme.name} value={theme.name}>
+                          <div className="flex items-center gap-2">
+                            <div className={`h-4 w-4 rounded-full ${theme.colors.background.split(' ')[0]}`} />
+                            {theme.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Layout</label>
+                  <Select
+                    value={slide.content?.layout || "Centered"}
+                    onValueChange={(value) => handleChange("layout", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a layout" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {layouts.map((layout) => (
+                        <SelectItem key={layout.name} value={layout.name}>
+                          {layout.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {slide.content?.modelUrl ? (
+                <div className="h-[400px] w-full rounded-lg border border-slate-200 dark:border-slate-800">
+                  <ModelSlidePreview content={slide.content} />
+                </div>
+              ) : (
+                <Alert variant="default" className="mt-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    No 3D model URL provided. Please add a GLTF/GLB model URL to display the 3D model.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        )
+
+      default:
+        return (
+          <Card className="w-full">
+            <CardContent className="p-6">
+              <Alert variant="default">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Unknown slide type. Please select a valid slide type.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        )
     }
-    onUpdate(updatedSlide)
   }
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
-          <TabsTrigger value="edit">Edit</TabsTrigger>
-        </TabsList>
-
-        <TabsContent
-          value="preview"
-          className="min-h-[400px] rounded-lg border border-slate-200 p-6 dark:border-slate-800"
-        >
-          {slide.type === "text" && <TextSlidePreview content={slide.content} />}
-          {slide.type === "image" && <ImageSlidePreview content={slide.content} />}
-          {slide.type === "3d" && <ModelSlidePreview content={slide.content} />}
-        </TabsContent>
-
-        <TabsContent value="edit" className="space-y-4">
-          {slide.type === "text" && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="title">Slide Title</Label>
-                <Input
-                  id="title"
-                  value={slide.content.title}
-                  onChange={(e) => handleContentChange("title", e.target.value)}
-                  placeholder="Enter slide title"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="body">Slide Content</Label>
-                <Textarea
-                  id="body"
-                  value={slide.content.body}
-                  onChange={(e) => handleContentChange("body", e.target.value)}
-                  placeholder="Enter slide content"
-                  rows={5}
-                />
-              </div>
-            </>
-          )}
-
-          {slide.type === "image" && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="src">Image URL</Label>
-                <Input
-                  id="src"
-                  value={slide.content.src}
-                  onChange={(e) => handleContentChange("src", e.target.value)}
-                  placeholder="Enter image URL"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="alt">Alt Text</Label>
-                <Input
-                  id="alt"
-                  value={slide.content.alt}
-                  onChange={(e) => handleContentChange("alt", e.target.value)}
-                  placeholder="Enter alt text"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="caption">Caption</Label>
-                <Input
-                  id="caption"
-                  value={slide.content.caption}
-                  onChange={(e) => handleContentChange("caption", e.target.value)}
-                  placeholder="Enter caption"
-                />
-              </div>
-            </>
-          )}
-
-          {slide.type === "3d" && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="modelUrl">3D Model URL</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="modelUrl"
-                    value={slide.content.modelUrl}
-                    onChange={(e) => handleContentChange("modelUrl", e.target.value)}
-                    placeholder="Enter 3D model URL (.glb or .gltf)"
-                  />
-                  <Link href="/models" target="_blank">
-                    <Button variant="outline" type="button">
-                      Browse
-                    </Button>
-                  </Link>
-                </div>
-                <p className="text-xs text-slate-500">Upload models in the 3D Model Library and copy their path</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="caption">Caption</Label>
-                <Input
-                  id="caption"
-                  value={slide.content.caption}
-                  onChange={(e) => handleContentChange("caption", e.target.value)}
-                  placeholder="Enter caption"
-                />
-              </div>
-            </>
-          )}
-        </TabsContent>
-      </Tabs>
+      {renderSlideEditor()}
     </div>
   )
 }

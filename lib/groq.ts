@@ -1,8 +1,9 @@
-import Groq  from 'groq-sdk';
+import Groq from "groq-sdk";
 
-console.log(process.env.GROQ_API_KEY)
 // Initialize Groq client
-const groq = new Groq({apiKey: "process.env.GROQ_API_KEY"});
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY
+});
 
 // Types for the function parameters and return value
 interface LlamaResponse {
@@ -35,7 +36,7 @@ export async function generateWithLlama(
 ): Promise<LlamaResponse> {
   try {
     const defaultOptions = {
-      model: 'llama3-70b-8192', // Using the latest Llama 3 70B model
+      model: 'llama3-70b-8192',
       temperature: 0.7,
       max_tokens: 1024,
       top_p: 1,
@@ -57,13 +58,4 @@ export async function generateWithLlama(
     console.error('Error generating with Llama:', error);
     throw new Error('Failed to generate response with Llama model');
   }
-}
-
-// Example usage:
-/*
-const response = await generateWithLlama('What is the capital of France?', {
-  temperature: 0.8,
-  max_tokens: 100
-});
-console.log(response.content);
-*/ 
+} 

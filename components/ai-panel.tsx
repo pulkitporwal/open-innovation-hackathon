@@ -1,11 +1,13 @@
 "use client"
 
-import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Wand2, Sparkles, FileText } from "lucide-react"
+import { Wand2, Sparkles, FileText, Image as ImageIcon } from "lucide-react"
+import { useState, useCallback } from "react"
+import { Input } from "@/components/ui/input"
+import { toast } from "sonner"
 
 interface AIPrompt {
   title: string
@@ -14,10 +16,11 @@ interface AIPrompt {
 }
 
 interface AIPanelProps {
-  onGenerateContent: (content: any) => void
+  onGenerateSlide: (prompt: string) => void
+  onGenerateImage?: (imageData: { src: string; alt: string; caption: string }) => void
 }
 
-export default function AIPanel({ onGenerateContent }: AIPanelProps) {
+export default function AIPanel({ onGenerateSlide, onGenerateImage }: AIPanelProps) {
   const [prompt, setPrompt] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [activeTab, setActiveTab] = useState("slides")
@@ -41,48 +44,38 @@ export default function AIPanel({ onGenerateContent }: AIPanelProps) {
         description: "Get image suggestions for your slides",
         prompt: "Suggest images for a presentation about [topic]",
       },
-      {
-        title: "3D Model Ideas",
-        description: "Get ideas for 3D models to include",
-        prompt: "Suggest 3D models that would enhance a presentation about [topic]",
-      },
     ],
   }
 
-  const handleGenerate = async () => {
-    if (!prompt) return
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!prompt.trim()) return
 
     setIsGenerating(true)
-
     try {
-      // In a real app, this would call an AI service
-      // For now, we'll just simulate a delay
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      if (activeTab === "visuals" && onGenerateImage) {
+        const response = await fetch("/api/slides/generate-image", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ prompt }),
+        })
 
-      // Mock response
-      const mockContent = {
-        title: "AI Generated Content",
-        slides: [
-          {
-            type: "text",
-            content: {
-              title: "Introduction to the Topic",
-              body: "This is an AI-generated slide about the requested topic.",
-            },
-          },
-          {
-            type: "text",
-            content: {
-              title: "Key Points",
-              body: "• First important point\n• Second important point\n• Third important point",
-            },
-          },
-        ],
+        if (!response.ok) {
+          throw new Error("Failed to generate image")
+        }
+
+        const imageData = await response.json()
+        onGenerateImage(imageData)
+        toast.success("Image generated successfully!")
+      } else {
+        onGenerateSlide(prompt)
       }
-
-      onGenerateContent(mockContent)
+      setPrompt("")
     } catch (error) {
-      console.error("Error generating content:", error)
+      console.error("Error:", error)
+      toast.error("Failed to generate content. Please try again.")
     } finally {
       setIsGenerating(false)
     }
@@ -108,26 +101,48 @@ export default function AIPanel({ onGenerateContent }: AIPanelProps) {
         <div className="md:col-span-2">
           <Card className="h-full">
             <CardHeader>
-              <CardTitle>Generate Content</CardTitle>
-              <CardDescription>Describe what you want to create or ask for suggestions</CardDescription>
+              <CardTitle>AI Assistant</CardTitle>
             </CardHeader>
             <CardContent>
-              <Textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="E.g., Create a presentation about renewable energy sources with 5 slides"
-                className="min-h-[200px]"
-              />
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Textarea
+                  placeholder={
+                    activeTab === "slides"
+                      ? "Describe the slide you want to create..."
+                      : "Describe the image you want to generate..."
+                  }
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  className="min-h-[100px]"
+                />
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Generating...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      {activeTab === "slides" ? (
+                        <>
+                          <Wand2 className="h-4 w-4" />
+                          Generate Slide
+                        </>
+                      ) : (
+                        <>
+                          <ImageIcon className="h-4 w-4" />
+                          Generate Image
+                        </>
+                      )}
+                    </span>
+                  )}
+                </Button>
+              </form>
             </CardContent>
-            <CardFooter>
-              <Button onClick={handleGenerate} disabled={!prompt || isGenerating} className="w-full gap-2">
-                <Wand2 className="h-4 w-4" />
-                Generate
-                {isGenerating && (
-                  <span className="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
-                )}
-              </Button>
-            </CardFooter>
           </Card>
         </div>
 

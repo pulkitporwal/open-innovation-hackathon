@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { ArrowLeft, Wand2 } from "lucide-react";
 import Link from "next/link";
+import { generateWithLlama } from "@/lib/groq";
 
 export default function CreatePresentationPage() {
   const router = useRouter();
@@ -30,25 +32,12 @@ export default function CreatePresentationPage() {
     setIsGenerating(true);
 
     try {
-      const response = await fetch("/api/presentations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title,
-          topic,
-        }),
-      });
+      // In a real app, this would generate content and create a presentation
+      // For now, we'll just simulate a delay
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      const data = await response.json();
-      
-      if (response.ok) {
-        // Redirect to the editor with the new presentation ID
-        router.push(`/edit/${data._id}`);
-      } else {
-        console.error("Error creating presentation:", data.error);
-      }
+      // Redirect to the editor with a new presentation ID
+      router.push("/edit/new-presentation");
     } catch (error) {
       console.error("Error creating presentation:", error);
     } finally {
@@ -73,9 +62,9 @@ export default function CreatePresentationPage() {
       });
 
       const data = await response.json();
-      if (data.title) {
-        setTitle(data.title);
-      }
+      const generatedTitle = data.title;
+      console.log(generatedTitle)
+      setTitle(generatedTitle);
     } catch (error) {
       console.error("Error generating with AI:", error);
     } finally {
@@ -156,4 +145,4 @@ export default function CreatePresentationPage() {
       </Card>
     </div>
   );
-} 
+}

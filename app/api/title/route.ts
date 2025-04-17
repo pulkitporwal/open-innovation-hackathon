@@ -12,14 +12,18 @@ export async function POST(request: Request) {
             )
         }
 
-        const prompt = `Generate a creative and engaging title for a presentation about: ${description}. The title should be concise, memorable, and relevant to the topic.`
+        const prompt = `Generate a creative and engaging title for a presentation about: ${description}. The title should be concise, memorable, and relevant to the topic. And the title should be enclosed with $ symbol.`
 
         const response = await generateWithLlama(prompt, {
             temperature: 0.8,
             max_tokens: 100,
         })
         console.log(response)
-        return NextResponse.json({ title: response.content.trim() })
+
+        const match = response.content.trim().match(/\$(.*?)\$/);
+
+        const result = match ? match[1] : null;
+        return NextResponse.json({ title: result })
     } catch (error) {
         console.error("Error generating title:", error)
         return NextResponse.json(

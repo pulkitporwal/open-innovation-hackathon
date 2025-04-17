@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, CuboidIcon as Cube } from "lucide-react"
+import { PlusCircle } from "lucide-react"
 import PresentationList from "@/components/presentation-list"
 import Header from "@/components/header"
 
@@ -21,12 +21,6 @@ export default function HomePage() {
               <Button size="lg" className="gap-2">
                 <PlusCircle className="h-5 w-5" />
                 New Presentation
-              </Button>
-            </Link>
-            <Link href="/models">
-              <Button size="lg" variant="outline" className="gap-2">
-                <Cube className="h-5 w-5" />
-                Manage 3D Models
               </Button>
             </Link>
           </div>

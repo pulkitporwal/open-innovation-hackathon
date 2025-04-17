@@ -10,12 +10,6 @@ export default function Header() {
           AI Presentation Maker
         </Link>
         <nav className="flex items-center gap-4">
-          <Link href="/models">
-            <Button variant="ghost" className="gap-2">
-              <Cube className="h-5 w-5" />
-              3D Models
-            </Button>
-          </Link>
           <Link href="/create">
             <Button className="gap-2">
               <PlusCircle className="h-5 w-5" />

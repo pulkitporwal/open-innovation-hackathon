@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, ArrowRight, X } from "lucide-react"
 import TextSlidePreview from "@/components/slides/text-slide-preview"
 import ImageSlidePreview from "@/components/slides/image-slide-preview"
-import ModelSlidePreview from "@/components/slides/model-slide-preview"
+import ModelSlidePreview from "@/components/slides/3d-model-preview"
 import Link from "next/link"
+import { toast } from "sonner"
 
 type Slide = {
   id: string
@@ -24,38 +25,34 @@ export default function PresentationPage() {
   const [slides, setSlides] = useState<Slide[]>([])
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Mock data - in a real app, this would come from an API
-    setTitle("Product Launch Strategy")
-    setSlides([
-      {
-        id: "slide-1",
-        type: "text",
-        content: {
-          title: "Product Launch Strategy",
-          body: "Q3 2023 - Marketing Team",
-        },
-      },
-      {
-        id: "slide-2",
-        type: "image",
-        content: {
-          src: "/placeholder.svg?height=400&width=600",
-          alt: "Product image",
-          caption: "Our new flagship product",
-        },
-      },
-      {
-        id: "slide-3",
-        type: "3d",
-        content: {
-          modelUrl: "/assets/3d/duck.glb",
-          caption: "3D Product Visualization",
-        },
-      },
-    ])
-  }, [presentationId])
+    const fetchPresentation = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch(`/api/presentations/${presentationId}`)
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch presentation")
+        }
+
+        const data = await response.json()
+        setTitle(data.title)
+        setSlides(data.slides)
+      } catch (error) {
+        console.error("Error fetching presentation:", error)
+        toast.error("Failed to load presentation")
+        router.push("/")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (presentationId) {
+      fetchPresentation()
+    }
+  }, [presentationId, router])
 
   const goToNextSlide = () => {
     if (currentSlideIndex < slides.length - 1) {
@@ -102,11 +99,51 @@ export default function PresentationPage() {
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [currentSlideIndex, slides.length, isFullscreen])
 
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+          <p className="text-sm text-slate-500">Loading presentation...</p>
+        </div>
+      </div>
+    )
+  }
+
   if (slides.length === 0) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50">No slides found</h2>
+          <p className="mt-2 text-slate-600 dark:text-slate-400">
+            This presentation doesn't have any slides yet.
+          </p>
+          <Link
+            href={`/edit/${presentationId}`}
+            className="mt-4 inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Go back to editor
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   const currentSlide = slides[currentSlideIndex]
+
+  const renderSlide = (slide: Slide) => {
+    switch (slide.type) {
+      case "text":
+        return <TextSlidePreview content={slide.content} />
+      case "image":
+        return <ImageSlidePreview content={slide.content} />
+      case "3d":
+        return <ModelSlidePreview content={slide.content} />
+      default:
+        return null
+    }
+  }
 
   return (
     <div className="flex h-screen flex-col bg-white dark:bg-slate-950">
@@ -123,7 +160,7 @@ export default function PresentationPage() {
         </Link>
 
         <div className="text-sm text-slate-500 dark:text-slate-400">
-          Slide {currentSlideIndex + 1} of {slides.length}
+          {title} - Slide {currentSlideIndex + 1} of {slides.length}
         </div>
 
         <Button variant="outline" size="sm" onClick={toggleFullscreen}>
@@ -134,9 +171,7 @@ export default function PresentationPage() {
       {/* Slide Content */}
       <div className="flex flex-1 items-center justify-center p-8">
         <div className="w-full max-w-4xl">
-          {currentSlide.type === "text" && <TextSlidePreview content={currentSlide.content} />}
-          {currentSlide.type === "image" && <ImageSlidePreview content={currentSlide.content} />}
-          {currentSlide.type === "3d" && <ModelSlidePreview content={currentSlide.content} />}
+          {renderSlide(currentSlide)}
         </div>
       </div>
 

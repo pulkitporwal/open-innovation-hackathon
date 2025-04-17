@@ -1,67 +1,81 @@
 "use client"
 
-import { Card } from "@/components/ui/card"
-import { Type, ImageIcon as Image, CuboidIcon as Cube } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Type, ImageIcon as Image, CuboidIcon as Cube, Trash2 } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 
-type Slide = {
+interface Slide {
   id: string
-  type: "text" | "image" | "3d"
-  content: any
+  type: "text" | "image"
+  content: {
+    title?: string
+    body?: string
+    src?: string
+    alt?: string
+    caption?: string
+    modelUrl?: string
+  }
+  order: number
 }
 
 interface SlideListProps {
   slides: Slide[]
   currentIndex: number
   onSelectSlide: (index: number) => void
+  onRemoveSlide?: (index: number) => void
 }
 
-export default function SlideList({ slides, currentIndex, onSelectSlide }: SlideListProps) {
+export default function SlideList({ slides, currentIndex, onSelectSlide, onRemoveSlide }: SlideListProps) {
+  if (!slides || slides.length === 0) {
+    return (
+      <Alert variant="default" className="mt-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          No slides available. Use the AI panel to generate your first slide!
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
   return (
     <div className="space-y-2">
       {slides.map((slide, index) => (
         <Card
-          key={slide.id}
-          className={`cursor-pointer p-2 transition-all hover:bg-slate-100 dark:hover:bg-slate-800 ${
-            index === currentIndex ? "ring-2 ring-slate-900 dark:ring-slate-400" : ""
+          key={slide.id || `slide-${index}`}
+          className={`cursor-pointer transition-colors ${
+            currentIndex === index
+              ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+              : "hover:bg-slate-100 dark:hover:bg-slate-800"
           }`}
           onClick={() => onSelectSlide(index)}
         >
-          <div className="relative aspect-video w-full overflow-hidden rounded bg-white dark:bg-slate-800">
-            {/* Slide thumbnail preview */}
-            <div className="flex h-full w-full items-center justify-center p-2 text-xs">
-              {slide.type === "text" && (
-                <div className="space-y-1 text-center">
-                  <p className="line-clamp-1 font-medium">{slide.content.title}</p>
-                  <p className="line-clamp-2 text-[0.6rem] text-slate-500 dark:text-slate-400">{slide.content.body}</p>
-                </div>
-              )}
-
-              {slide.type === "image" && (
-                <div className="relative h-full w-full">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Image className="h-6 w-6 text-slate-400" />
-                  </div>
-                </div>
-              )}
-
-              {slide.type === "3d" && (
-                <div className="relative h-full w-full">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Cube className="h-6 w-6 text-slate-400" />
-                  </div>
-                </div>
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <h4 className="text-sm font-medium">
+                  {slide.content?.title || `Slide ${index + 1}`}
+                </h4>
+                <p className="text-xs text-slate-500">
+                  {slide.type ? slide.type.charAt(0).toUpperCase() + slide.type.slice(1) + " Slide" : "Unknown Slide Type"}
+                </p>
+              </div>
+              {onRemoveSlide && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onRemoveSlide(index)
+                  }}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
               )}
             </div>
-
-            {/* Slide type indicator */}
-            <div className="absolute bottom-1 right-1 rounded-full bg-slate-200 p-1 dark:bg-slate-700">
-              {slide.type === "text" && <Type className="h-3 w-3" />}
-              {slide.type === "image" && <Image className="h-3 w-3" />}
-              {slide.type === "3d" && <Cube className="h-3 w-3" />}
-            </div>
-          </div>
-
-          <div className="mt-1 text-center text-xs text-slate-500 dark:text-slate-400">Slide {index + 1}</div>
+          </CardContent>
         </Card>
       ))}
     </div>
